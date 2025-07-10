@@ -89,6 +89,21 @@ classDiagram
 
 ---
 
+## 1.1 クラス・メソッドの入出力型・例外・エラーケース（補足）
+
+| クラス/メソッド                | 入力型                       | 出力型                       | 例外・エラーケース例                       |
+|-------------------------------|------------------------------|------------------------------|--------------------------------------------|
+| Game.make_move(move)           | Move                         | bool                         | 不正手（Move.is_valid=False, error_message）|
+| Game.undo_move(), redo_move()  | なし                         | bool                         | 履歴なし、巻き戻し不可                      |
+| Board.get_square(x, y)         | int, int                     | Square/None                  | 範囲外アクセス                             |
+| Board.normalize_pos(x, y)      | int, int                     | (int, int)                   | -                                          |
+| Piece.move(to)                 | (int, int)                   | bool                         | 不正移動、成り不可                         |
+| Rules.validate_move(...)       | Piece, from, to, Board       | bool/str                     | 移動ルール違反、障害物衝突                 |
+| Rules.check_victory_condition  | dict                         | Optional[str]                | -                                          |
+| Rules.validate_settings        | board, pieces, rules         | None/ValidationError         | 設定不整合                                 |
+
+---
+
 ## 2. 主要モジュールの内部ロジック・アルゴリズム
 
 ### 2.1 Gameクラス
@@ -230,8 +245,41 @@ flowchart TD
 
 ---
 
+## 7.3 主要画面ワイヤーフレーム例（Mermaid）
+
+```mermaid
+flowchart TD
+  Top[トップ画面: ロゴ・新規作成・参加・履歴]
+  Editor[設定エディタ: 盤面形状選択・YAMLエディタ・プレビュー・保存]
+  Game[ゲーム画面: 盤面・コマ操作・ターン表示・チャット・履歴]
+  Spectate[観戦/履歴: 盤面遷移再生・進行状況・観戦者リスト]
+
+  Top --> Editor
+  Top --> Game
+  Top --> Spectate
+  Game --> Spectate
+```
+
+---
+
 ## 8. 再利用性・保守性・最適化の補足
 - すべてのクラス・APIは単体テスト可能な粒度で設計
 - 盤面・コマ・ルールの追加/変更は設定ファイルのみで対応可能
 - 履歴・巻き戻し・やり直し機能により、ユーザー体験とデバッグ性を向上
 - エラー処理・バリデーションは共通モジュール化し、再利用性・保守性を高める 
+
+---
+
+## 8.1 エラー処理・異常系フロー図（Mermaid）
+
+```mermaid
+flowchart TD
+  A[ユーザー操作] --> B[WebUI入力]
+  B --> C[API/WSリクエスト]
+  C --> D[サーバーバリデーション]
+  D -- OK --> E[正常処理]
+  D -- エラー --> F[エラーメッセージ返却]
+  F --> B
+```
+
+- 例：不正なYAML/不正手/認証エラー時は詳細なエラーメッセージをUIに返却 

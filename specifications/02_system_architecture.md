@@ -163,6 +163,20 @@ classDiagram
 
 ---
 
+## 4.1 モジュール責務・入出力・エラー処理フロー（補足）
+
+| モジュール         | 主な責務                                 | 主な入出力例                                   | 主なエラー処理例                       |
+|--------------------|------------------------------------------|-----------------------------------------------|----------------------------------------|
+| APIサーバー        | REST API受付・認証・設定管理             | board.yaml, pieces.yaml, rules.yaml           | バリデーションエラー、認証エラー        |
+| WebSocketサーバー  | ゲーム進行・リアルタイム通知             | move, join, update                            | 不正操作エラー、通信切断                |
+| YAMLパーサー       | 設定ファイルのパース・バリデーション     | board.yaml, pieces.yaml, rules.yaml           | フォーマットエラー、整合性エラー        |
+| ルールエンジン     | 合法手判定・勝利条件判定                 | ゲーム状態、Move                              | 不正手エラー、勝利条件未成立            |
+| AIエンジン         | AI手番計算                               | ゲーム状態                                    | 計算不能エラー                          |
+| ゲーム状態管理     | ゲーム進行・履歴管理                     | ゲーム状態、Move                              | 履歴不整合エラー                        |
+| 履歴管理           | ゲーム履歴保存・取得                     | ゲームID、履歴データ                          | 履歴取得エラー                          |
+
+---
+
 ## 5. インターフェース仕様書
 
 ### サーバー内部I/F（関数・メソッド）
@@ -182,16 +196,16 @@ classDiagram
 
 ### REST API/WS I/F（外部I/F）
 
-| メソッド/イベント | パス/イベント名         | 入力例/データ構造                       | 出力例/データ構造                 |
-|-------------------|------------------------|------------------------------------------|-----------------------------------|
-| POST              | /api/games             | {board_yaml, pieces_yaml, rules_yaml}    | {game_id, status, errors}         |
-| GET               | /api/games/{id}        | なし                                     | {board, pieces, rules, state}     |
-| POST              | /api/games/{id}/move   | {from, to, player, promote}              | {state, errors}                   |
-| GET               | /api/games/{id}/history| なし                                     | {moves, timestamps}               |
-| WS                | join                   | {game_id}                                | {state}                           |
-| WS                | move                   | {from, to, player, promote}              | {state, errors}                   |
-| WS                | update                 | {state}                                  | {state}                           |
-| WS                | error                  | {message}                                | {message}                         |
+| メソッド/イベント | パス/イベント名         | 入力例/データ構造                       | 出力例/データ構造                 | 主なエラーケース例 |
+|-------------------|------------------------|------------------------------------------|-----------------------------------|-------------------|
+| POST              | /api/games             | {board_yaml, pieces_yaml, rules_yaml}    | {game_id, status, errors}         | バリデーションエラー、認証エラー |
+| GET               | /api/games/{id}        | なし                                     | {board, pieces, rules, state}     | 存在しないID、認証エラー         |
+| POST              | /api/games/{id}/move   | {from, to, player, promote}              | {state, errors}                   | 不正手、ターン外操作、認証エラー |
+| GET               | /api/games/{id}/history| なし                                     | {moves, timestamps}               | 存在しないID、認証エラー         |
+| WS                | join                   | {game_id, token}                         | {state}                           | 認証エラー、存在しないID         |
+| WS                | move                   | {from, to, player, promote}              | {state, errors}                   | 不正手、ターン外操作、認証エラー |
+| WS                | update                 | {state}                                  | {state}                           | -                 |
+| WS                | error                  | {message}                                | {message}                         | -                 |
 
 - **注記**: API/WSはREST/リアルタイム用途で明確に分離。
 
@@ -221,6 +235,17 @@ classDiagram
 ### サポート・運用
 - ログ出力（操作・エラー・セキュリティイベント）
 - 障害時の自動復旧（プロセス監視/再起動）
+
+---
+
+## 6.1 セキュリティ設計（具体策補足）
+- すべてのREST/WSリクエストで認証トークン必須（JWT等）
+- CORSポリシーで許可ドメイン制限
+- CSRFトークンによるPOST/WS保護
+- すべての入力値はサーバー側でバリデーション
+- XSS対策：出力時エスケープ
+- SQLインジェクション対策：ORM/プリペアドステートメント利用
+- 履歴・設定ファイルはユーザーごとにアクセス制御
 
 ---
 
