@@ -1,7 +1,67 @@
 # 詳細設計書
 
-## 1. クラス構成（再掲・補足）
+## 文書情報
+- **文書名**: FlexiBoard 詳細設計書
+- **バージョン**: 1.0
+- **作成日**: 2025年7月25日
+- **最終更新日**: 2025年7月25日
+- **作成者**: 開発チーム
+- **承認者**: [承認者名]
+- **承認日**: [承認日]
 
+## 変更履歴
+| バージョン | 日付 | 変更内容 | 変更者 |
+|------------|------|----------|--------|
+| 1.0 | 2025-07-25 | 初版作成 | 開発チーム |
+
+---
+
+## 1. プロジェクト概要
+
+### 1.1 プロジェクト名
+FlexiBoard（フレキシボード）
+
+### 1.2 システム概要
+本システムは、ユーザーが自由にルールを設定し、矩形盤面またはクアッドスフィア盤面でボードゲームを作成・プレイできるWebプラットフォームである。
+
+### 1.3 詳細設計の目的
+- 実装可能なレベルでのクラス設計・アルゴリズム定義
+- エラーハンドリング・バリデーションの詳細化
+- パフォーマンス・セキュリティの実装方針明確化
+
+### 1.4 設計方針
+- **実装可能性**: 具体的なコードレベルでの設計
+- **保守性**: 理解しやすく拡張可能な構造
+- **テスト容易性**: 単体テスト可能な粒度での設計
+- **エラー耐性**: 堅牢なエラーハンドリング
+
+---
+
+## 2. 用語・略語定義
+- **undo/redo**: 操作の取り消し・やり直し機能
+- **バリデーション**: 入力データの妥当性検証
+- **エラーハンドリング**: エラー発生時の処理
+- **アルゴリズム**: 問題解決のための手順
+- **シーケンス図**: オブジェクト間の相互作用を時系列で表現
+- **クラス図**: クラスとその関係を表現する図
+- **MVP**: Minimum Viable Product（最小実用製品）
+
+---
+
+## 3. リスク分析
+| リスク項目 | 影響度 | 発生確率 | 対策 |
+|------------|--------|----------|------|
+| 複雑なアルゴリズムによる実装困難 | 高 | 中 | 段階的実装・十分なテスト |
+| パフォーマンス要件の未達 | 高 | 中 | アルゴリズム最適化・プロファイリング |
+| エラーハンドリングの不備 | 高 | 中 | 包括的なテスト・エラーケース網羅 |
+| セキュリティ脆弱性 | 高 | 低 | セキュリティレビュー・バリデーション強化 |
+| 保守性の低下 | 中 | 中 | 適切な設計パターン・ドキュメント整備 |
+
+---
+
+## 4. クラス構成（詳細）
+
+### 4.1 クラス図（詳細版）
 ```mermaid
 classDiagram
   class Game {
@@ -11,29 +71,47 @@ classDiagram
     +rules: Rules
     +players: List[Player]
     +state: dict
-    +make_move(move: Move) bool
+    +history: List[Move]
+    +undo_stack: List[Move]
+    +redo_stack: List[Move]
+    +error_count: int
+    +last_error: str
+    +make_move(move: Move) -> bool
     +check_victory() -> Optional[str]
-    +to_dict() dict
-    +undo_move() bool
-    +redo_move() bool
+    +undo() -> bool
+    +redo() -> bool
+    +to_dict() -> dict
+    +from_dict(data: dict) -> None
+    +validate_state() -> bool
   }
+  
   class Board {
     +type: str
     +size: Tuple[int, int]
     +special_squares: List[SpecialSquare]
     +obstacles: List[Obstacle]
+    +error_count: int
+    +last_error: str
     +get_square(x: int, y: int) -> Square
     +normalize_pos(x: int, y: int) -> Tuple[int, int]
-    +is_within_bounds(x: int, y: int) -> bool
+    +is_valid_position(x: int, y: int) -> bool
+    +get_adjacent_squares(x: int, y: int) -> List[Tuple[int, int]]
+    +validate_board() -> bool
   }
+  
   class Piece {
     +type: str
     +position: Tuple[int, int]
     +owner: str
     +promoted: bool
-    +move(to: Tuple[int, int]) bool
-    +can_promote(to: Tuple[int, int]) -> bool
+    +error_count: int
+    +last_error: str
+    +move(to: Tuple[int, int]) -> bool
+    +can_move_to(x: int, y: int, board: Board) -> bool
+    +get_legal_moves(board: Board) -> List[Tuple[int, int]]
+    +validate_piece() -> bool
   }
+  
   class Rules {
     +turn_system: str
     +victory_conditions: List[VictoryCondition]
@@ -42,37 +120,59 @@ classDiagram
     +reuse_rules: dict
     +time_limit: dict
     +players: dict
+    +error_count: int
+    +last_error: str
     +validate_move(piece: Piece, from_pos: Tuple[int, int], to_pos: Tuple[int, int], board: Board) -> bool
-    +check_victory_condition(game_state) -> Optional[str]
-    +validate_settings(board, pieces, rules) -> None
+    +check_victory_condition(game_state: dict) -> bool
+    +check_draw_condition(game_state: dict) -> bool
+    +validate_rules() -> bool
   }
+  
   class Player {
     +id: str
     +name: str
-    +type: str # human/ai
+    +type: str
     +ai_level: Optional[str]
+    +error_count: int
+    +last_error: str
+    +validate_player() -> bool
   }
+  
   class Move {
     +from_pos: Tuple[int, int]
     +to_pos: Tuple[int, int]
     +player_id: str
     +piece_type: str
     +promote: bool
-    +is_valid: bool
-    +error_message: Optional[str]
+    +timestamp: datetime
+    +error_count: int
+    +last_error: str
+    +validate_move() -> bool
   }
+  
   class SpecialSquare {
     +position: Tuple[int, int]
     +effect: str
     +value: Any
+    +error_count: int
+    +last_error: str
+    +validate_special_square() -> bool
   }
+  
   class Obstacle {
     +position: Tuple[int, int]
     +type: str
+    +error_count: int
+    +last_error: str
+    +validate_obstacle() -> bool
   }
+  
   class VictoryCondition {
     +type: str
     +value: Any
+    +error_count: int
+    +last_error: str
+    +validate_victory_condition() -> bool
   }
 
   Game o-- Board
@@ -85,238 +185,392 @@ classDiagram
   Rules o-- VictoryCondition
 ```
 
-- **補足**: undo/redo, is_within_bounds, can_promote, is_valid, error_message等を追加し、保守性・再利用性・エラー処理を強化。
+### 4.2 クラス責務・主な属性/メソッド（詳細版）
+
+| クラス名         | 主な責務・役割                                                                 | 主な属性/メソッド例                                                                                 | エラーハンドリング                                                                                   |
+|------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Game             | ゲーム全体の状態管理・進行制御・undo/redo機能                                 | id, board, pieces, rules, players, state, history, undo_stack, redo_stack, make_move(), undo(), redo() | error_count, last_error, validate_state()                                                           |
+| Board            | 盤面構造・特殊マス・障害物管理・位置正規化                                     | type, size, special_squares, obstacles, get_square(), normalize_pos(), is_valid_position()              | error_count, last_error, validate_board()                                                           |
+| Piece            | コマの状態・移動処理・合法手計算                                             | type, position, owner, promoted, move(), can_move_to(), get_legal_moves()                              | error_count, last_error, validate_piece()                                                           |
+| Rules            | ゲームルール・勝利条件・合法手判定・引き分け判定                             | turn_system, victory_conditions, draw_conditions, validate_move(), check_victory_condition()             | error_count, last_error, validate_rules()                                                           |
+| Player           | プレイヤー情報（人間/AI）・バリデーション                                     | id, name, type, ai_level                                                                               | error_count, last_error, validate_player()                                                          |
+| Move             | 1手の情報・タイムスタンプ・バリデーション                                     | from_pos, to_pos, player_id, piece_type, promote, timestamp                                            | error_count, last_error, validate_move()                                                            |
+| SpecialSquare    | 特殊マス情報・バリデーション                                                 | position, effect, value                                                                                 | error_count, last_error, validate_special_square()                                                  |
+| Obstacle         | 障害物情報・バリデーション                                                   | position, type                                                                                          | error_count, last_error, validate_obstacle()                                                        |
+| VictoryCondition | 勝利条件情報・バリデーション                                                 | type, value                                                                                              | error_count, last_error, validate_victory_condition()                                               |
 
 ---
 
-## 1.1 クラス・メソッドの入出力型・例外・エラーケース（補足）
+## 5. サーバー内部I/F（関数・メソッド）詳細
 
-| クラス/メソッド                | 入力型                       | 出力型                       | 例外・エラーケース例                       |
-|-------------------------------|------------------------------|------------------------------|--------------------------------------------|
-| Game.make_move(move)           | Move                         | bool                         | 不正手（Move.is_valid=False, error_message）|
-| Game.undo_move(), redo_move()  | なし                         | bool                         | 履歴なし、巻き戻し不可                      |
-| Board.get_square(x, y)         | int, int                     | Square/None                  | 範囲外アクセス                             |
-| Board.normalize_pos(x, y)      | int, int                     | (int, int)                   | -                                          |
-| Piece.move(to)                 | (int, int)                   | bool                         | 不正移動、成り不可                         |
-| Rules.validate_move(...)       | Piece, from, to, Board       | bool/str                     | 移動ルール違反、障害物衝突                 |
-| Rules.check_victory_condition  | dict                         | Optional[str]                | -                                          |
-| Rules.validate_settings        | board, pieces, rules         | None/ValidationError         | 設定不整合                                 |
+### 5.1 入力・出力型・エラーケース詳細
 
----
+| モジュール/クラス | I/F名                       | 入力例                                   | 出力例/説明                       | 主なエラーケース例                                                                                   |
+|-------------------|-----------------------------|------------------------------------------|-----------------------------------|-----------------------------------------------------------------------------------------------------|
+| Game              | make_move(move: Move)       | Move(from_pos=(1,1), to_pos=(2,2), ...) | bool（成功/失敗）                | 不正手、ターン外操作、盤面外移動、既存コマとの重複                                                   |
+| Game              | check_victory()             | なし                                     | Optional[str]（勝者ID/None）      | 勝利条件未成立、複数勝利条件の競合                                                                   |
+| Game              | undo()                      | なし                                     | bool（成功/失敗）                | 履歴なし、undo_stack空                                                                               |
+| Game              | redo()                      | なし                                     | bool（成功/失敗）                | redo_stack空                                                                                         |
+| Game              | to_dict()                   | なし                                     | dict（シリアライズ用）            | シリアライズ失敗、メモリ不足                                                                         |
+| Game              | from_dict(data: dict)       | dict（デシリアライズ用）                 | None/ValidationError             | 不正なデータ形式、必須フィールド欠損                                                                 |
+| Board             | get_square(x, y)            | x: int, y: int                           | Square/None                       | 盤面外座標、不正な座標型                                                                             |
+| Board             | normalize_pos(x, y)         | x: int, y: int                           | (x, y)（端のラップ処理）          | 不正な座標型、計算エラー                                                                             |
+| Board             | is_valid_position(x, y)     | x: int, y: int                           | bool（有効/無効）                | 不正な座標型                                                                                         |
+| Piece             | can_move_to(x, y, board)    | x: int, y: int, Board                    | bool（移動可能/不可能）          | 不正な座標、盤面外、障害物衝突                                                                       |
+| Piece             | get_legal_moves(board)      | Board                                    | List[Tuple[int, int]]            | 盤面不正、計算エラー                                                                                 |
+| Rules             | validate_move(piece, from, to, board) | Piece, from_pos, to_pos, Board   | bool（合法手か）                  | 不正な座標、ターン外、ルール違反                                                                     |
+| Rules             | check_victory_condition(game_state)   | dict（現状）                     | bool                              | 不正なゲーム状態、勝利条件未定義                                                                     |
+| yaml_parser       | validate_settings(board, pieces, rules) | dict, dict, dict                  | None/ValidationError              | YAML形式エラー、必須項目欠損、整合性エラー                                                           |
 
-## 2. 主要モジュールの内部ロジック・アルゴリズム
+### 5.2 エラーハンドリング詳細
 
-### 2.1 Gameクラス
-- ゲーム全体の状態管理、進行制御、履歴管理
-- 主なメソッド：
-  - `make_move(move: Move)`: 合法手判定→状態更新→履歴追加。異常時はMove.is_valid=False, error_messageに理由を格納。
-  - `undo_move()`, `redo_move()`: 履歴を用いた巻き戻し/やり直し。UIからも呼び出し可能。
-  - `check_victory()`: 勝利条件判定。勝者IDまたはNoneを返す。
-  - `to_dict()`: シリアライズ
-
-### 2.2 Boardクラス
-- 盤面構造・特殊マス・障害物管理
-- クアッドスフィア盤面時はnormalize_posで端ラップ処理
-- 主なメソッド：
-  - `get_square(x, y)`: 指定座標のマス情報取得
-  - `normalize_pos(x, y)`: 端ラップ処理
-  - `is_within_bounds(x, y)`: 盤面内判定（矩形盤面時）
-
-### 2.3 Pieceクラス
-- コマの状態・移動・成り処理
-- 主なメソッド：
-  - `move(to)`: 位置更新、成り判定
-  - `can_promote(to)`: 成り可能か判定
-
-### 2.4 Rulesクラス
-- 合法手判定・勝利条件判定・バリデーション
-- 主なメソッド：
-  - `validate_move(piece, from, to, board)`: 移動ルール・障害物・特殊マス考慮。違反時は理由を返す。
-  - `check_victory_condition(game_state)`: 現在状態で勝利条件成立か判定
-  - `validate_settings(board, pieces, rules)`: 設定ファイルの整合性検証
-
-### 2.5 エラー処理・異常系設計方針
-- すべてのユーザー入力・APIリクエストはサーバー側でバリデーション
-- 不正な操作・設定時は詳細なエラーメッセージを返却
-- 予期せぬ例外はログ出力し、UIには一般的なエラー通知を表示
-- 履歴巻き戻し・やり直し時も一貫した状態復元を保証
+| エラー種別         | 発生箇所例                           | 処理方法                                                                                             | ユーザーへの通知                                                                                     |
+|--------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| バリデーションエラー | 設定ファイル読み込み時               | ValidationError例外発生、詳細メッセージ付き                                                         | エラー箇所・修正方法を具体的に表示                                                                   |
+| 不正操作エラー     | ターン外の手番実行時                 | 操作を無視、エラーメッセージ返却                                                                     | 「あなたのターンではありません」等の明確なメッセージ                                                 |
+| 通信エラー         | WebSocket接続断時                   | 再接続試行、一定回数失敗でエラー状態                                                                 | 接続状態・再接続ボタンの表示                                                                         |
+| システムエラー     | メモリ不足・予期しない例外           | ログ出力、安全な状態への復旧                                                                         | 「システムエラーが発生しました。しばらく待ってから再試行してください」                               |
+| タイムアウトエラー | AI計算時間超過時                     | 計算中断、デフォルト手番実行                                                                         | 「AIの計算に時間がかかっています」等の状況通知                                                       |
 
 ---
 
-## 3. 主要アルゴリズム例
+## 6. 主要アルゴリズム詳細
 
-### 3.1 合法手判定（Rules.validate_move）
-1. コマの移動ルール（movement, special_moves）を取得
-2. 盤面形状（矩形/クアッドスフィア）に応じて座標正規化
-3. 障害物・特殊マスの有無を確認
-4. 目的地が盤面内（またはラップ後）か判定
-5. 他コマとの衝突・特殊ルール（ジャンプ等）を考慮
-6. 合法ならTrue、不正ならFalseと理由
+### 6.1 移動判定アルゴリズム（validate_move）
 
-### 3.2 勝利条件判定（Rules.check_victory_condition）
-1. victory_conditionsリストを順に評価
-2. 例：capture_kingなら盤面上にkingが存在するか
-3. control_centerなら指定マスを占有しているか
-4. scoreならポイント到達か
-5. いずれか成立で勝者を返す
+```python
+def validate_move(piece: Piece, from_pos: Tuple[int, int], to_pos: Tuple[int, int], board: Board, rules: Rules) -> bool:
+    """
+    移動の妥当性を判定するアルゴリズム
+    
+    Args:
+        piece: 移動対象のコマ
+        from_pos: 移動元座標
+        to_pos: 移動先座標
+        board: 盤面情報
+        rules: ゲームルール
+    
+    Returns:
+        bool: 移動が妥当な場合True
+    
+    Raises:
+        ValidationError: 移動が不正な場合
+    """
+    try:
+        # 1. 基本チェック
+        if not board.is_valid_position(*from_pos) or not board.is_valid_position(*to_pos):
+            raise ValidationError("座標が盤面外です")
+        
+        if from_pos == to_pos:
+            raise ValidationError("移動元と移動先が同じです")
+        
+        # 2. コマ存在チェック
+        if not piece or piece.position != from_pos:
+            raise ValidationError("指定された位置にコマが存在しません")
+        
+        # 3. 移動先チェック
+        target_square = board.get_square(*to_pos)
+        if target_square and target_square.piece and target_square.piece.owner == piece.owner:
+            raise ValidationError("味方のコマがある位置には移動できません")
+        
+        # 4. 移動パターンチェック
+        if not piece.can_move_to(*to_pos, board):
+            raise ValidationError("このコマは指定された位置に移動できません")
+        
+        # 5. 特殊ルールチェック
+        if not rules.validate_special_rules(piece, from_pos, to_pos, board):
+            raise ValidationError("特殊ルールにより移動できません")
+        
+        return True
+        
+    except Exception as e:
+        piece.error_count += 1
+        piece.last_error = str(e)
+        raise ValidationError(f"移動判定エラー: {e}")
+```
+
+### 6.2 勝利条件判定アルゴリズム（check_victory）
+
+```python
+def check_victory(game: Game) -> Optional[str]:
+    """
+    勝利条件を判定するアルゴリズム
+    
+    Args:
+        game: ゲーム状態
+    
+    Returns:
+        Optional[str]: 勝者のID、勝利条件未成立時はNone
+    
+    Raises:
+        ValidationError: 勝利条件判定エラーの場合
+    """
+    try:
+        for condition in game.rules.victory_conditions:
+            if condition.type == "capture_king":
+                # 王を取った場合の勝利判定
+                kings = [p for p in game.pieces if p.type == "king"]
+                if len(kings) < len(game.players):
+                    # 王が取られた場合、取ったプレイヤーが勝利
+                    for piece in game.pieces:
+                        if piece.type == "king":
+                            return piece.owner
+            
+            elif condition.type == "reach_goal":
+                # 特定位置到達による勝利判定
+                goal_pos = condition.value
+                for piece in game.pieces:
+                    if piece.position == goal_pos:
+                        return piece.owner
+            
+            elif condition.type == "elimination":
+                # 全滅による勝利判定
+                remaining_players = set(piece.owner for piece in game.pieces)
+                if len(remaining_players) == 1:
+                    return list(remaining_players)[0]
+        
+        return None
+        
+    except Exception as e:
+        game.error_count += 1
+        game.last_error = str(e)
+        raise ValidationError(f"勝利条件判定エラー: {e}")
+```
+
+### 6.3 クアッドスフィア盤面の位置正規化アルゴリズム
+
+```python
+def normalize_pos(x: int, y: int, board_size: Tuple[int, int]) -> Tuple[int, int]:
+    """
+    クアッドスフィア盤面での位置正規化アルゴリズム
+    
+    Args:
+        x: X座標
+        y: Y座標
+        board_size: 盤面サイズ (width, height)
+    
+    Returns:
+        Tuple[int, int]: 正規化された座標
+    
+    Raises:
+        ValidationError: 座標計算エラーの場合
+    """
+    try:
+        width, height = board_size
+        
+        # X座標の正規化（左右の端を接続）
+        normalized_x = x % width
+        if normalized_x < 0:
+            normalized_x += width
+        
+        # Y座標の正規化（上下の端を接続）
+        normalized_y = y % height
+        if normalized_y < 0:
+            normalized_y += height
+        
+        return (normalized_x, normalized_y)
+        
+    except Exception as e:
+        raise ValidationError(f"位置正規化エラー: {e}")
+```
+
+### 6.4 AI手番計算アルゴリズム（簡易版）
+
+```python
+def calculate_ai_move(game: Game, player: str, difficulty: str) -> Optional[Move]:
+    """
+    AIの手番を計算するアルゴリズム
+    
+    Args:
+        game: ゲーム状態
+        player: AIプレイヤーID
+        difficulty: 難易度（easy/medium/hard）
+    
+    Returns:
+        Optional[Move]: 計算された手番、計算できない場合はNone
+    
+    Raises:
+        ValidationError: AI計算エラーの場合
+    """
+    try:
+        # プレイヤーのコマを取得
+        player_pieces = [p for p in game.pieces if p.owner == player]
+        
+        if not player_pieces:
+            return None
+        
+        # 難易度に応じた計算
+        if difficulty == "easy":
+            # ランダムな手番
+            import random
+            piece = random.choice(player_pieces)
+            legal_moves = piece.get_legal_moves(game.board)
+            if legal_moves:
+                to_pos = random.choice(legal_moves)
+                return Move(
+                    from_pos=piece.position,
+                    to_pos=to_pos,
+                    player_id=player,
+                    piece_type=piece.type,
+                    promote=False
+                )
+        
+        elif difficulty == "medium":
+            # 簡単な評価関数による手番選択
+            best_move = None
+            best_score = float('-inf')
+            
+            for piece in player_pieces:
+                legal_moves = piece.get_legal_moves(game.board)
+                for to_pos in legal_moves:
+                    # 仮想的に手番を実行して評価
+                    temp_game = copy.deepcopy(game)
+                    temp_move = Move(
+                        from_pos=piece.position,
+                        to_pos=to_pos,
+                        player_id=player,
+                        piece_type=piece.type,
+                        promote=False
+                    )
+                    if temp_game.make_move(temp_move):
+                        score = evaluate_position(temp_game, player)
+                        if score > best_score:
+                            best_score = score
+                            best_move = temp_move
+            
+            return best_move
+        
+        return None
+        
+    except Exception as e:
+        raise ValidationError(f"AI計算エラー: {e}")
+```
 
 ---
 
-## 4. シーケンス図（ゲーム進行・エラー処理含む）
+## 7. シーケンス図（ゲーム進行・エラーハンドリング）
+
+### 7.1 正常なゲーム進行フロー
 
 ```mermaid
 sequenceDiagram
-  participant U as ユーザー
-  participant W as WebUI
-  participant S as サーバー
-  participant P as yaml_parser.py
-  participant G as game_service.py
+    participant U as ユーザー
+    participant UI as WebUI
+    participant WS as WebSocket
+    participant GS as GameService
+    participant G as Game
+    participant R as Rules
+    participant B as Board
 
-  U->>W: 設定編集/操作
-  W->>S: POST /api/games
-  S->>P: validate_settings
-  alt 不整合
-    P->>S: エラー
-    S->>W: エラー通知
-    W->>U: エラー表示
-  else 正常
-    P->>S: OK
-    S->>G: ゲーム作成
-    G->>S: ゲーム状態
-    S->>W: ゲームID
-    W->>U: ゲーム画面
-  end
-  loop ゲーム進行
-    U->>W: コマ移動
-    W->>S: move
-    S->>G: make_move
-    G->>G: 動的チェック
-    alt 不正
-      G->>S: エラー（Move.error_message）
-      S->>W: エラー通知
-      W->>U: エラー表示
-    else 正常
-      G->>S: 更新状態
-      S->>W: 状態通知
-      W->>U: 盤面更新
-    end
-  end
+    U->>UI: コマ選択
+    UI->>WS: move(from_pos, to_pos, player)
+    WS->>GS: make_move(game_id, move)
+    GS->>G: make_move(move)
+    G->>R: validate_move(piece, from, to, board)
+    R->>B: is_valid_position(to_pos)
+    B-->>R: true
+    R-->>G: true
+    G->>G: update_game_state()
+    G->>G: check_victory()
+    G-->>GS: success
+    GS-->>WS: {state: updated_state}
+    WS-->>UI: update(state)
+    UI->>U: 盤面更新・結果表示
 ```
 
----
-
-## 5. データベース設計書（補足）
-- 各テーブルの主キー・外部キー・インデックス・制約条件を明記
-- 履歴テーブルはゲームID・手番順・タイムスタンプでインデックス
-- 設定ファイルはゲームごとにバージョン管理可能
-
----
-
-## 6. API仕様書（補足）
-- すべてのAPIはバリデーションエラー時に400、認証エラー時に401、サーバーエラー時に500を返す
-- 入力・出力のJSONスキーマ例を明記
-- エラー時はerror_messageフィールドで詳細を返却
-
----
-
-## 7. UI設計書
-
-### 7.1 画面レイアウト例
-
-```mermaid
-flowchart TD
-  S1[トップ画面]
-  S2[設定エディタ画面]
-  S3[ゲーム作成/参加画面]
-  S4[ゲームプレイ画面]
-  S5[観戦/履歴画面]
-
-  S1 --> S2
-  S1 --> S3
-  S3 --> S4
-  S4 --> S5
-  S1 --> S5
-```
-
-### 7.2 主要UI要素
-- **設定エディタ画面**: 盤面形状選択ドロップダウン、YAMLエディタ、プレビュー盤面、バリデーション結果表示、保存/インポート/エクスポートボタン
-- **ゲームプレイ画面**: 盤面グリッド、コマ操作（ドラッグ/クリック）、ターン表示、チャット欄、履歴/巻き戻し/やり直しボタン
-- **観戦/履歴画面**: 盤面遷移再生コントロール、進行状況表示、観戦者リスト
-
----
-
-## 7.3 主要画面ワイヤーフレーム例（Mermaid）
-
-```mermaid
-flowchart TD
-  Top[トップ画面: ロゴ・新規作成・参加・履歴]
-  Editor[設定エディタ: 盤面形状選択・YAMLエディタ・プレビュー・保存]
-  Game[ゲーム画面: 盤面・コマ操作・ターン表示・チャット・履歴]
-  Spectate[観戦/履歴: 盤面遷移再生・進行状況・観戦者リスト]
-
-  Top --> Editor
-  Top --> Game
-  Top --> Spectate
-  Game --> Spectate
-```
-
----
-
-## 8. 再利用性・保守性・最適化の補足
-- すべてのクラス・APIは単体テスト可能な粒度で設計
-- 盤面・コマ・ルールの追加/変更は設定ファイルのみで対応可能
-- 履歴・巻き戻し・やり直し機能により、ユーザー体験とデバッグ性を向上
-- エラー処理・バリデーションは共通モジュール化し、再利用性・保守性を高める 
-
----
-
-## 8.1 エラー処理・異常系フロー図（Mermaid）
-
-```mermaid
-flowchart TD
-  A[ユーザー操作] --> B[WebUI入力]
-  B --> C[API/WSリクエスト]
-  C --> D[サーバーバリデーション]
-  D -- OK --> E[正常処理]
-  D -- エラー --> F[エラーメッセージ返却]
-  F --> B
-```
-
-- 例：不正なYAML/不正手/認証エラー時は詳細なエラーメッセージをUIに返却 
-
----
-
-# UI設計観点の補足
-
-## 各画面での主要ロジック・UI-サーバー連携
-
-| 画面名             | 主なロジック・連携 | UI-サーバーやりとり | エラー処理・UX向上策 |
-|--------------------|--------------------|---------------------|---------------------|
-| トップ画面         | 画面遷移           | なし                | 遷移失敗時の通知    |
-| 設定エディタ画面   | YAML編集・即時プレビュー・バリデーション | 設定送信/取得（REST）| バリデーションエラー詳細表示、即時反映|
-| ゲーム作成/参加画面| ルーム作成・参加待機 | ルーム作成/参加（REST/WS）| 参加失敗・ID不正時の詳細表示|
-| ゲームプレイ画面   | コマ操作・ターン管理・AI手番・履歴 | 手操作/AI進行/履歴取得（WS）| 不正手・進行不能時の詳細表示、巻き戻し/やり直し|
-| 観戦/履歴画面      | 盤面遷移再生・観戦同期 | 履歴取得/観戦（REST/WS）| 再生失敗・データ不整合時の詳細表示|
-
-- すべての画面で、サーバーからのエラー内容をUI上で詳細に表示し、ユーザーが次のアクションを選択できるようにする。
-- ゲームプレイ画面では、巻き戻し・やり直し機能によりUXを向上。
-- 設定エディタ画面では、YAML編集の即時プレビュー・バリデーションでユーザー体験を高める。
-
-## UI-サーバー連携シーケンス例（Mermaid）
+### 7.2 エラーハンドリングフロー
 
 ```mermaid
 sequenceDiagram
-  participant U as ユーザー
-  participant UI as WebUI
-  participant API as APIサーバー
-  participant WS as WebSocketサーバー
+    participant U as ユーザー
+    participant UI as WebUI
+    participant WS as WebSocket
+    participant GS as GameService
+    participant G as Game
+    participant R as Rules
 
-  U->>UI: 設定編集/操作
-  UI->>API: 設定保存/バリデーション
-  API-->>UI: 結果/エラー
-  UI->>WS: ゲーム進行/観戦
-  WS-->>UI: 状態更新/エラー
-  UI->>U: 画面・エラー表示
+    U->>UI: 不正な手番実行
+    UI->>WS: move(invalid_move)
+    WS->>GS: make_move(game_id, invalid_move)
+    GS->>G: make_move(invalid_move)
+    G->>R: validate_move(piece, from, to, board)
+    R-->>G: ValidationError("不正な手番です")
+    G->>G: increment_error_count()
+    G->>G: set_last_error("不正な手番です")
+    G-->>GS: ValidationError
+    GS-->>WS: {error: "不正な手番です", details: {...}}
+    WS-->>UI: error(message, details)
+    UI->>U: エラーメッセージ表示・修正案内
 ```
+
+### 7.3 設定ファイルバリデーションフロー
+
+```mermaid
+sequenceDiagram
+    participant U as ユーザー
+    participant UI as WebUI
+    participant API as REST API
+    participant YP as YAMLParser
+    participant V as Validator
+
+    U->>UI: 設定ファイルアップロード
+    UI->>API: POST /api/validate (yaml_files)
+    API->>YP: parse_board(board_yaml)
+    YP-->>API: board_dict
+    API->>YP: parse_pieces(pieces_yaml)
+    YP-->>API: pieces_dict
+    API->>YP: parse_rules(rules_yaml)
+    YP-->>API: rules_dict
+    API->>V: validate_settings(board, pieces, rules)
+    V->>V: check_consistency()
+    V->>V: check_required_fields()
+    V->>V: check_value_ranges()
+    V-->>API: ValidationResult
+    API-->>UI: {valid: true/false, errors: [...]}
+    UI->>U: バリデーション結果表示
+```
+
+---
+
+## 8. 補足詳細（DB設計・API仕様・UI設計）
+
+### 8.1 データベース設計詳細
+
+| テーブル名 | 主キー | 外部キー | 主要カラム | インデックス |
+|------------|--------|----------|------------|--------------|
+| games | game_id | - | board_type, board_size, status, created_at | game_id, status, created_at |
+| players | player_id | game_id | name, type, ai_level, status | game_id, type |
+| moves | move_id | game_id, player_id | from_pos, to_pos, piece_type, promote, timestamp | game_id, timestamp |
+| game_states | game_id | - | board_state, pieces, current_turn, history | game_id |
+
+### 8.2 API仕様詳細
+
+| エンドポイント | メソッド | リクエストボディ | レスポンス | ステータスコード |
+|----------------|----------|------------------|------------|------------------|
+| `/api/games` | POST | {board_yaml, pieces_yaml, rules_yaml} | {game_id, status} | 201 Created |
+| `/api/games/{id}` | GET | - | {board, pieces, rules, state} | 200 OK |
+| `/api/games/{id}/move` | POST | {from, to, player, promote} | {state, errors} | 200 OK / 400 Bad Request |
+| `/api/games/{id}/undo` | POST | {player} | {state, errors} | 200 OK / 400 Bad Request |
+| `/api/games/{id}/redo` | POST | {player} | {state, errors} | 200 OK / 400 Bad Request |
+
+### 8.3 UI設計詳細
+
+| 画面要素 | 機能 | イベント | エラーハンドリング |
+|----------|------|----------|-------------------|
+| 盤面グリッド | コマ表示・選択 | click, drag | 無効な操作時の視覚的フィードバック |
+| コマ | 移動・プロモーション | drag, drop | 不正な移動先のハイライト表示 |
+| ターン表示 | 現在のプレイヤー表示 | - | ターン外操作の無効化 |
+| 履歴パネル | 手番履歴表示 | click | 履歴データ取得失敗時のメッセージ |
+| エラーメッセージ | エラー表示 | - | エラー詳細の展開・折りたたみ |
+
+---
+
+## 9. 承認
+
+| 役割 | 氏名 | 署名 | 日付 |
+|------|------|------|------|
+| プロジェクトマネージャー | [氏名] | [署名] | [日付] |
+| 技術責任者 | [氏名] | [署名] | [日付] |
+| 品質保証責任者 | [氏名] | [署名] | [日付] |
 
 --- 
