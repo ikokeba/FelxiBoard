@@ -1,0 +1,9 @@
+board_type: "rectangular"
+board_size: [8, 8]
+special_squares:
+  - position: [4, 4]
+    effect: "damage"
+    value: 1
+obstacles: []
+
+
