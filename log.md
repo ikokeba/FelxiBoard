@@ -35,3 +35,35 @@
 - 追加ドキュメント（テスト計画書、運用・保守計画書、セキュリティ設計書）の作成検討
 
 --- 
+ 
+## 2025-08-11
+
+### バックエンドMVP実装と環境整備
+
+**作業内容**:
+- uv仮想環境（.venv）作成、依存インストール（Flask, Flask-SocketIO, PyYAML, devツール）
+- `pyproject.toml` 整備（hatch build targets: wheel/sdist, scripts）
+- 最小バックエンド実装追加（`backend/app.py`）
+  - モデル: `Game`, `Board`, `Piece`, `Rules`, `SpecialSquare`, `Obstacle`
+  - バリデーション: `validate_board`, `validate_pieces`, `validate_rules`, `validate_settings`
+  - API: `GET /api/health`, `POST /api/games`, `GET /api/games/{id}`, `POST /api/games/{id}/move`
+  - WebSocket: `join`, `update`（HTTP→WS通知は`socketio.emit`に修正）
+- サンプル設定追加（`backend/sample_configs/*.yaml`）
+- スモークテストスクリプト追加（`scripts/smoke_api.py`）
+
+**確認結果**:
+- 内蔵テストクライアントでヘルス確認・ゲーム作成・取得が成功（PowerShell経由のJSON送信ではエスケープ起因の500が発生するためbody.json経由で切り分け中）
+
+**todo更新**:
+- 環境セットアップの完了を反映、API疎通テスト項目を追加
+
+**既知の課題**:
+- PowerShellの`Invoke-RestMethod`で複数行YAMLを含むJSONのエスケープが不安定→外部ファイル化 or curl利用に切替予定
+- ログ出力・例外ハンドリングの強化、コード分割（`services/`, `models/`）
+
+**次のアクション**:
+- PowerShell/curl両対応の疎通スクリプト整備とAPI 500切り分け完了
+- ユニットテスト雛形追加（バリデーション/API）
+- フロントエンド雛形着手（設定エディタのモック）
+
+---

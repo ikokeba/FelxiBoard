@@ -319,6 +319,8 @@ def create_app() -> tuple[Flask, SocketIO]:
             return jsonify({"game_id": game.id, "status": "created", "errors": None}), 201
         except ValidationError as e:
             return jsonify({"game_id": None, "status": "error", "errors": str(e)}), 400
+        except Exception as e:  # surface unexpected errors for investigation in MVP
+            return jsonify({"game_id": None, "status": "error", "errors": f"unexpected: {e}"}), 400
 
     @app.get("/api/games/<game_id>")
     def api_get_game(game_id: str):
