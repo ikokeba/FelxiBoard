@@ -583,9 +583,28 @@ class GameManager {
 
             if (result.success) {
                 console.log('Move executed successfully');
+                // 楽観的更新（WS未接続時も即時反映する）
+                if (this.currentGame && Array.isArray(this.currentGame.pieces)) {
+                    const idx = this.currentGame.pieces.findIndex(p =>
+                        p.position[0] === fromPos[0] && p.position[1] === fromPos[1] && p.owner === player && p.type === this.selectedPiece.type
+                    );
+                    if (idx !== -1) {
+                        this.currentGame.pieces[idx].position = toPos;
+                    }
+                }
+                // 履歴の更新
+                this.gameHistory.push({ from: fromPos, to: toPos, player });
+                if (this.currentGame && this.currentGame.state) {
+                    this.currentGame.state.history = this.gameHistory;
+                    this.currentGame.state.turn = this.currentGame.state.turn === 'player_1' ? 'player_2' : 'player_1';
+                }
+                // UI更新
                 this.clearSelection();
-
-                // ゲーム状態の更新を待つ（WebSocket経由）
+                this.updateCurrentPlayer();
+                this.renderBoard();
+                this.updateGameInfo();
+                // AI手番
+                setTimeout(() => this.checkAndHandleAiTurn(), 200);
             } else {
                 console.error('Move failed:', result.error);
                 alert(`移動に失敗しました: ${result.error}`);

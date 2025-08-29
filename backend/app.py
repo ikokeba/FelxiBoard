@@ -303,8 +303,9 @@ def create_app() -> tuple[Flask, SocketIO]:
     app = Flask(__name__,
                 static_folder='../frontend',
                 static_url_path='/static')
-    CORS(app)
-    socketio = SocketIO(app, cors_allowed_orig_origins="*")
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:8014", "http://127.0.0.1:8014"]}})
+    # Allow Socket.IO from UI origins (broad for dev convenience)
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
     @app.get("/api/health")
     def health() -> Any:

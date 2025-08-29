@@ -340,8 +340,19 @@ class UIManager {
             const result = await window.apiManager.createGame();
             if (result.success) {
                 this.gameId = result.gameId;
+                // ゲームプレイ画面へ遷移
                 this.showPage('game-play-page');
                 this.setStatusMessage('creation-status', '');
+
+                // 直ちにゲームへ参加し、状態を反映（クリックのみで開始できるように）
+                try {
+                    const join = await window.apiManager.joinGame(this.gameId);
+                    if (join.success && join.gameData && window.gameManager) {
+                        window.gameManager.setGameData(join.gameData);
+                    }
+                } catch (_) {
+                    // 参加失敗時は画面遷移のみ（MVPでは無視）
+                }
             } else {
                 this.setStatusMessage('creation-status', result.error, 'error');
             }

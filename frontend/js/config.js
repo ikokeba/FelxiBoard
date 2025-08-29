@@ -26,8 +26,12 @@ piece_types:
     movement: "forward_1"
     special_moves: []
     promotion:
-      new_type: "queen"
+      new_type: "promoted_pawn"
       zone: "enemy_back_row"
+  - name: "promoted_pawn"
+    movement: "adjacent"
+    special_moves: []
+    promotion: null
 
 initial_positions:
   player_1:
