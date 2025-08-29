@@ -103,6 +103,10 @@
 - 公開前最終チェックリストの完了
 
 ---
+### .gitignore更新（backend/__pycache__ 除外） - 2025-08-29 15:08:25
+- `.gitignore` に `backend/__pycache__/` を追記
+- 既に追跡されていた `backend/__pycache__/` 配下を `git rm --cached -r` で除外
+
 
 ### E2E: Playwright-MCP によるゲーム作成動作確認（2025-08-29）
 
