@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiBoard - 汎用ボードゲームプラットフォーム</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1>FlexiBoard</h1>
+            <p class="subtitle">汎用ボードゲーム作成・対戦プラットフォーム</p>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <div id="page-container">
+                <!-- 初期画面 -->
+                <div id="home-page" class="page active">
+                    <div class="hero-section">
+                        <h2>ボードゲームを自由に作成・プレイ</h2>
+                        <p>YAML設定ファイルでルールを定義し、独自のボードゲームを作成・対戦できます</p>
+                        <div class="action-buttons">
+                            <button id="create-game-btn" class="btn btn-primary">新規ゲーム作成</button>
+                            <button id="join-game-btn" class="btn btn-secondary">ゲームに参加</button>
+                        </div>
+                    </div>
+
+                    <div class="features">
+                        <div class="feature-card">
+                            <h3>📋 自由なルール設定</h3>
+                            <p>YAMLファイルで盤面・駒・ルールを自由に定義</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🎮 リアルタイム対戦</h3>
+                            <p>最大4人でリアルタイム対戦が可能</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🤖 AI対戦</h3>
+                            <p>AIプレイヤーと自動対戦機能</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ゲーム作成ページ -->
+                <div id="create-game-page" class="page">
+                    <div class="page-header">
+                        <button id="back-to-home-btn" class="btn btn-secondary">← 戻る</button>
+                        <h2>新規ゲーム作成</h2>
+                    </div>
+
+                    <div class="create-game-container">
+                        <!-- 盤面形状選択 -->
+                        <section class="config-section">
+                            <h3>1. 盤面形状を選択</h3>
+                            <div class="board-shape-selector">
+                                <label>
+                                    <input type="radio" name="board-shape" value="rectangular" checked>
+                                    <span class="shape-option">
+                                        <strong>矩形盤面</strong><br>
+                                        標準的なグリッド型盤面（チェス、将棋など）
+                                    </span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="board-shape" value="quadsphere">
+                                    <span class="shape-option">
+                                        <strong>クアッドスフィア盤面</strong><br>
+                                        端が反対側に接続される球面近似盤面
+                                    </span>
+                                </label>
+                            </div>
+                        </section>
+
+                        <!-- 設定ファイル編集 -->
+                        <section class="config-section">
+                            <h3>2. 設定ファイルを編集</h3>
+
+                            <!-- テンプレート選択とインポート/エクスポート -->
+                            <div class="config-controls">
+                                <div class="template-selector">
+                                    <label>テンプレート:</label>
+                                    <select id="template-select">
+                                        <option value="basic">基本</option>
+                                        <option value="advanced">高度</option>
+                                        <option value="custom">カスタム</option>
+                                    </select>
+                                    <button id="apply-template-btn" class="btn btn-secondary">適用</button>
+                                </div>
+
+                                <div class="file-controls">
+                                    <button id="import-file-btn" class="btn btn-secondary">インポート</button>
+                                    <input type="file" id="file-input" accept=".yaml,.yml" style="display: none;">
+                                    <button id="export-all-btn" class="btn btn-secondary">一括エクスポート</button>
+                                </div>
+                            </div>
+
+                            <div class="config-tabs">
+                                <button class="tab-btn active" data-tab="board">盤面設定</button>
+                                <button class="tab-btn" data-tab="pieces">駒設定</button>
+                                <button class="tab-btn" data-tab="rules">ルール設定</button>
+                                <button class="tab-btn" data-tab="ai">AI設定</button>
+                            </div>
+                            <div class="config-editor">
+                                <textarea id="board-config" class="config-textarea" placeholder="board.yamlの内容を入力..."></textarea>
+                                <textarea id="pieces-config" class="config-textarea hidden" placeholder="pieces.yamlの内容を入力..."></textarea>
+                                <textarea id="rules-config" class="config-textarea hidden" placeholder="rules.yamlの内容を入力..."></textarea>
+                                <div id="ai-config" class="config-textarea hidden">
+                                    <div class="ai-settings">
+                                        <h4>AIプレイヤー設定</h4>
+                                        <div class="setting-group">
+                                            <label for="ai-difficulty">AI難易度:</label>
+                                            <select id="ai-difficulty">
+                                                <option value="easy">簡単 (ランダム移動)</option>
+                                                <option value="medium">普通 (重み付け選択)</option>
+                                                <option value="hard">難しい (戦略的選択)</option>
+                                            </select>
+                                        </div>
+                                        <div class="setting-group">
+                                            <label for="ai-player-name">AIプレイヤー名:</label>
+                                            <input type="text" id="ai-player-name" value="AI Player" placeholder="AIの名前を入力">
+                                        </div>
+                                        <div class="setting-group">
+                                            <label for="enable-ai">AIを有効にする:</label>
+                                            <input type="checkbox" id="enable-ai" checked>
+                                        </div>
+                                        <div class="ai-info">
+                                            <p><strong>AI機能について:</strong></p>
+                                            <ul>
+                                                <li><strong>簡単:</strong> 完全にランダムな移動</li>
+                                                <li><strong>普通:</strong> 中央寄りや特殊マスを考慮した移動</li>
+                                                <li><strong>難しい:</strong> より戦略的な評価に基づく移動</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 個別エクスポートボタン -->
+                            <div class="export-controls">
+                                <button id="export-board-btn" class="btn btn-outline">盤面設定をエクスポート</button>
+                                <button id="export-pieces-btn" class="btn btn-outline">駒設定をエクスポート</button>
+                                <button id="export-rules-btn" class="btn btn-outline">ルール設定をエクスポート</button>
+                            </div>
+
+                            <!-- ステータスメッセージ -->
+                            <div id="template-status" class="status-message" style="margin-top: 1rem;"></div>
+                            <div id="import-status" class="status-message" style="margin-top: 0.5rem;"></div>
+                            <div id="export-status" class="status-message" style="margin-top: 0.5rem;"></div>
+                            <div id="ai-status" class="status-message" style="margin-top: 0.5rem;"></div>
+                        </section>
+
+                        <!-- プレビューと作成 -->
+                        <section class="config-section">
+                            <h3>3. プレビューと作成</h3>
+                            <div class="preview-section">
+                                <div id="board-preview" class="board-preview">
+                                    <!-- 盤面プレビューがここに表示されます -->
+                                </div>
+                                <div class="validation-result">
+                                    <button id="validate-btn" class="btn btn-secondary">設定を検証</button>
+                                    <div id="validation-messages" class="messages"></div>
+                                </div>
+                            </div>
+                            <div class="game-creation">
+                                <button id="create-game-final-btn" class="btn btn-primary">ゲームを作成</button>
+                                <div id="creation-status" class="status-message"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ゲーム参加ページ -->
+                <div id="join-game-page" class="page">
+                    <div class="page-header">
+                        <button id="back-to-home-from-join-btn" class="btn btn-secondary">← 戻る</button>
+                        <h2>ゲームに参加</h2>
+                    </div>
+
+                    <div class="join-game-container">
+                        <div class="join-form">
+                            <label for="game-id-input">ゲームIDを入力:</label>
+                            <input type="text" id="game-id-input" placeholder="例: abc12345">
+                            <button id="join-game-submit-btn" class="btn btn-primary">参加</button>
+                        </div>
+                        <div id="join-status" class="status-message"></div>
+                    </div>
+                </div>
+
+                <!-- ゲームプレイページ -->
+                <div id="game-play-page" class="page">
+                    <div class="page-header">
+                        <button id="leave-game-btn" class="btn btn-secondary">ゲームを離れる</button>
+                        <h2 id="game-title">ゲームプレイ</h2>
+                    </div>
+
+                    <div class="game-container">
+                        <!-- ゲームステータス -->
+                        <div id="game-status" class="game-status waiting">
+                            ゲームに参加しています...
+                        </div>
+
+                        <div class="game-board" id="game-board">
+                            <!-- ゲーム盤面がここに表示されます -->
+                        </div>
+
+                        <div class="game-info">
+                            <div class="turn-info">
+                                <h3>現在のターン: <span id="current-turn">プレイヤー1</span></h3>
+                            </div>
+
+                            <div class="players-list">
+                                <h3>プレイヤー</h3>
+                                <ul id="players-ul"></ul>
+                            </div>
+
+                            <div class="move-history">
+                                <h3>移動履歴</h3>
+                                <div id="history-container" class="history-container"></div>
+                            </div>
+
+                            <div class="game-controls">
+                                <button id="reset-game-btn" class="btn btn-warning">ゲームをリセット</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- フッター -->
+        <footer class="footer">
+            <p>&copy; 2025 FlexiBoard Team. Made with ❤️ for board game enthusiasts.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScriptファイル -->
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -300,13 +300,23 @@ def create_game_from_yamls(board_yaml: str, pieces_yaml: str, rules_yaml: str) -
 
 
 def create_app() -> tuple[Flask, SocketIO]:
-    app = Flask(__name__)
+    app = Flask(__name__,
+                static_folder='../frontend',
+                static_url_path='/static')
     CORS(app)
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    socketio = SocketIO(app, cors_allowed_orig_origins="*")
 
     @app.get("/api/health")
     def health() -> Any:
         return {"status": "ok"}
+
+    @app.get("/")
+    def index():
+        return app.send_static_file('index.html')
+
+    @app.get("/<path:path>")
+    def static_files(path):
+        return app.send_static_file(path)
 
     @app.post("/api/games")
     def api_create_game():
