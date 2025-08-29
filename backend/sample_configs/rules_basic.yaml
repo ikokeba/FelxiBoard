@@ -1,0 +1,16 @@
+turn_system: "alternate"
+victory_conditions:
+  - type: "capture_king"
+    value: "king"
+draw_conditions:
+  repetition: 4
+piece_reuse: "off"
+reuse_rules: null
+time_limit:
+  per_move: 60
+players:
+  number: 2
+  teams: false
+  ai_difficulty: null
+
+

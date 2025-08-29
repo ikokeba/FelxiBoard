@@ -1,0 +1,6 @@
+board_type: "quadsphere"
+board_size: [8, 8]
+special_squares: []
+obstacles: []
+
+

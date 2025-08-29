@@ -1,0 +1,16 @@
+piece_types:
+  - name: "king"
+    movement: "adjacent"
+    special_moves: []
+    promotion: null
+initial_positions:
+  player_1:
+    - type: "king"
+      position: [4, 0]
+      promoted: false
+  player_2:
+    - type: "king"
+      position: [4, 7]
+      promoted: false
+
+

@@ -1,0 +1,33 @@
+.venv/
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments / secrets
+.env
+
+# Logs and artifacts
+*.log
+coverage.xml
+.coverage
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+
+# Editors/Tools
+.idea/
+.vscode/
+.cursor/
+
+# OS
+.DS_Store
+
+# Data (exclude real datasets; keep samples under version control)
+data/
+
