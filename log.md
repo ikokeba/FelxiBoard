@@ -67,3 +67,26 @@
 - フロントエンド雛形着手（設定エディタのモック）
 
 ---
+
+## 2025-08-29
+
+### 公開リポジトリ準備（/repo_publish_preparation 準拠）
+
+**作業内容**:
+- 機密情報スキャン（コード/履歴/設定・データ）
+- `.gitignore` 拡充（`.venv/`, `.env`, `__pycache__/`, `*.log`, ツールキャッシュ 等）
+- `requirements.txt` 生成（`uv pip compile pyproject.toml -o requirements.txt`）
+- 追跡済みサーバーログの除外（`git rm --cached server-*.log`）
+- Serena用ディレクトリ作成（`.serena/.keep`）
+- `README.md` 更新（`uv sync` 手順・`uv run` 追記）
+
+**確認結果**:
+- コード内・履歴に機密値の混入なし（`Select-String` によるキーワード確認）
+- 依存関係は `pyproject.toml` を基に `requirements.txt` へ正しく反映
+- 現在ブランチは `origin` より2コミット先行、push未実施
+
+**次のアクション**:
+- `LICENSE` 追加（種別と著作権表記の確定待ち）
+- 公開前最終チェックリストの完了
+
+---

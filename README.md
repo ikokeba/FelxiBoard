@@ -9,9 +9,16 @@ Webベースの汎用ボードゲーム作成/対戦プラットフォーム（M
 ## 開発環境（uv）
 Windows PowerShell 前提。
 
+推奨（プロジェクト依存関係の同期）:
 ```
 uv --version
-uv venv --python 3.10 --seed --no-project --prompt .venv
+uv venv --python 3.10 --seed --prompt .venv
+uv sync
+```
+
+代替（開発ツール含めてインストール）:
+```
+uv venv --python 3.10 --seed --prompt .venv
 uv pip install -e .[dev]
 ```
 
@@ -21,6 +28,8 @@ uv pip install -e .[dev]
 ./.venv/Scripts/python -m backend.app
 # または（インストール済みなら）
 flexiboard
+# または（uv 経由で実行）
+uv run flexiboard
 ```
 
 ## API 概要（MVP）
