@@ -166,6 +166,32 @@ class FlexiBoardApp {
 
             // ゲームマネージャーにデータを設定
             if (window.gameManager) {
+                // YAML由来のアイコンマップを抽出して反映（piece_types.icon / icon_image）
+                try {
+                    const cfg = window.configManager && window.configManager.getCurrentConfig ? window.configManager.getCurrentConfig() : null;
+                    let iconMap = {};
+                    if (cfg && cfg.pieces) {
+                        // 簡易パースでアイコン定義を拾う（name, icon, icon_image）
+                        const lines = cfg.pieces.split('\n');
+                        let currentName = null;
+                        for (const raw of lines) {
+                            const line = raw.trim();
+                            if (line.startsWith('- name:')) {
+                                currentName = line.replace('- name:', '').trim().replace(/^"|"$/g, '');
+                                if (currentName) iconMap[currentName] = {};
+                            } else if (currentName && line.startsWith('icon_image:')) {
+                                const v = line.replace('icon_image:', '').trim().replace(/^"|"$/g, '');
+                                iconMap[currentName].icon_image = v;
+                            } else if (currentName && line.startsWith('icon:')) {
+                                const v = line.replace('icon:', '').trim().replace(/^"|"$/g, '');
+                                iconMap[currentName].icon = v;
+                            }
+                        }
+                    }
+                    if (Object.keys(iconMap).length > 0 && window.gameManager.setIconMap) {
+                        window.gameManager.setIconMap(iconMap);
+                    }
+                } catch (_) { /* no-op */ }
                 window.gameManager.setGameData(gameData);
             }
 

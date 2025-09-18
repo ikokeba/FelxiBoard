@@ -1,7 +1,9 @@
 turn_system: "alternate"
 victory_conditions:
   - type: "capture_king"
-    value: "king"
+    value: "chess_king"
+  - type: "capture_king"
+    value: "shogi_king"
 draw_conditions:
   repetition: 4
 piece_reuse: "off"

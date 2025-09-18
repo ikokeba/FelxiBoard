@@ -444,14 +444,21 @@ input[type="radio"] {
     align-items: start;
 }
 
+/* Explicit grid placement to keep board on the left, info on the right */
+.game-status { grid-column: 1 / -1; }
+#game-board { grid-column: 1; }
+.game-info { grid-column: 2; }
+
 .game-board {
     background: var(--card-background);
     padding: 2rem;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     display: flex;
+    flex-direction: column; /* 盤面と補助情報を縦並びにして中央配置 */
     align-items: center;
     justify-content: center;
+    gap: 0.75rem;
     min-height: 500px;
 }
 
@@ -575,9 +582,8 @@ input[type="radio"] {
         align-items: center;
     }
 
-    .game-container {
-        grid-template-columns: 1fr;
-    }
+    .game-container { grid-template-columns: 1fr; }
+    .game-status, #game-board, .game-info { grid-column: 1; }
 
     .preview-section {
         grid-template-columns: 1fr;

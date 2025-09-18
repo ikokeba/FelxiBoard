@@ -1,16 +1,195 @@
 piece_types:
-  - name: "king"
+  # Chess types
+  - name: "chess_king"
     movement: "adjacent"
     special_moves: []
     promotion: null
+    icon: "♔"
+  - name: "chess_queen"
+    movement: "custom"
+    special_moves: []
+    promotion: null
+    icon: "♕"
+  - name: "chess_rook"
+    movement: "horizontal_vertical_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "♖"
+  - name: "chess_bishop"
+    movement: "diagonal_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "♗"
+  - name: "chess_knight"
+    movement: "knight"
+    special_moves: []
+    promotion: null
+    icon: "♘"
+  - name: "chess_pawn"
+    movement: "forward_1"
+    special_moves: []
+    promotion:
+      new_type: "chess_queen"
+      zone: "enemy_back_row"
+    icon: "♙"
+
+  # Shogi types
+  - name: "shogi_king"
+    movement: "adjacent"
+    special_moves: []
+    promotion: null
+    icon: "王"
+  - name: "shogi_gold"
+    movement: [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "金"
+  - name: "shogi_silver"
+    movement: [[-1, -1], [0, -1], [1, -1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "銀"
+  - name: "shogi_knight"
+    movement: [[-1, -2], [1, -2]]
+    special_moves: []
+    promotion: null
+    icon: "桂"
+  - name: "shogi_lance"
+    movement: "custom"
+    special_moves: []
+    promotion: null
+    icon: "香"
+  - name: "shogi_bishop"
+    movement: "diagonal_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "角"
+  - name: "shogi_rook"
+    movement: "horizontal_vertical_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "飛"
+  - name: "shogi_pawn"
+    movement: "forward_1"
+    special_moves: []
+    promotion:
+      new_type: "shogi_tokkin"
+      zone: "enemy_back_row"
+    icon: "歩"
+  - name: "shogi_tokkin"
+    movement: [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "と"
+
 initial_positions:
+  # Chess (player_1) 8x8 default positions on y=0/1
   player_1:
-    - type: "king"
+    - type: "chess_rook"
+      position: [0, 0]
+      promoted: false
+    - type: "chess_knight"
+      position: [1, 0]
+      promoted: false
+    - type: "chess_bishop"
+      position: [2, 0]
+      promoted: false
+    - type: "chess_queen"
+      position: [3, 0]
+      promoted: false
+    - type: "chess_king"
       position: [4, 0]
       promoted: false
+    - type: "chess_bishop"
+      position: [5, 0]
+      promoted: false
+    - type: "chess_knight"
+      position: [6, 0]
+      promoted: false
+    - type: "chess_rook"
+      position: [7, 0]
+      promoted: false
+    - type: "chess_pawn"
+      position: [0, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [1, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [2, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [3, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [4, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [5, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [6, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [7, 1]
+      promoted: false
+  # Shogi (player_2) on y=8/7/6 for 9x9, but adapt to 8x8: place major pieces on y=7, pawns on y=6
   player_2:
-    - type: "king"
+    - type: "shogi_lance"
+      position: [0, 7]
+      promoted: false
+    - type: "shogi_knight"
+      position: [1, 7]
+      promoted: false
+    - type: "shogi_silver"
+      position: [2, 7]
+      promoted: false
+    - type: "shogi_gold"
+      position: [3, 7]
+      promoted: false
+    - type: "shogi_king"
       position: [4, 7]
+      promoted: false
+    - type: "shogi_gold"
+      position: [5, 7]
+      promoted: false
+    - type: "shogi_silver"
+      position: [6, 7]
+      promoted: false
+    - type: "shogi_knight"
+      position: [7, 7]
+      promoted: false
+    # bishops/rooks adapted to 8x8 corners
+    - type: "shogi_bishop"
+      position: [1, 6]
+      promoted: false
+    - type: "shogi_rook"
+      position: [6, 6]
+      promoted: false
+    # pawns
+    - type: "shogi_pawn"
+      position: [0, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [1, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [2, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [3, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [4, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [5, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [6, 5]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [7, 5]
       promoted: false
 
 

@@ -7,53 +7,219 @@ class ConfigManager {
     constructor() {
         this.templates = {
             rectangular: {
-                board: `# 矩形盤面設定
+                board: `# 矩形盤面設定（将棋 vs チェス）
 board_type: "rectangular"
-board_size: [8, 8]
-special_squares:
-  - position: [4, 4]
-    effect: "damage"
-    value: 1
+board_size: [9, 9]
+special_squares: []
 obstacles: []
 `,
-                pieces: `# 駒設定
+                pieces: `# 駒設定（将棋 vs チェス）
 piece_types:
-  - name: "king"
+  # Chess side
+  - name: "chess_king"
     movement: "adjacent"
     special_moves: []
     promotion: null
-  - name: "pawn"
+    icon: "♔"
+  - name: "chess_queen"
+    movement: "custom"
+    special_moves: []
+    promotion: null
+    icon: "♕"
+  - name: "chess_rook"
+    movement: "horizontal_vertical_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "♖"
+  - name: "chess_bishop"
+    movement: "diagonal_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "♗"
+  - name: "chess_knight"
+    movement: "knight"
+    special_moves: []
+    promotion: null
+    icon: "♘"
+  - name: "chess_pawn"
     movement: "forward_1"
     special_moves: []
     promotion:
-      new_type: "promoted_pawn"
+      new_type: "chess_queen"
       zone: "enemy_back_row"
-  - name: "promoted_pawn"
+    icon: "♙"
+
+  # Shogi side
+  - name: "shogi_king"
     movement: "adjacent"
     special_moves: []
     promotion: null
+    icon: "王"
+  - name: "shogi_gold"
+    movement: [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "金"
+  - name: "shogi_silver"
+    movement: [[-1, -1], [0, -1], [1, -1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "銀"
+  - name: "shogi_knight"
+    movement: [[-1, -2], [1, -2]]
+    special_moves: []
+    promotion: null
+    icon: "桂"
+  - name: "shogi_lance"
+    movement: "custom"
+    special_moves: []
+    promotion: null
+    icon: "香"
+  - name: "shogi_bishop"
+    movement: "diagonal_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "角"
+  - name: "shogi_rook"
+    movement: "horizontal_vertical_unlimited"
+    special_moves: []
+    promotion: null
+    icon: "飛"
+  - name: "shogi_pawn"
+    movement: "forward_1"
+    special_moves: []
+    promotion:
+      new_type: "shogi_tokkin"
+      zone: "enemy_back_row"
+    icon: "歩"
+  - name: "shogi_tokkin"
+    movement: [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, 1], [1, 1]]
+    special_moves: []
+    promotion: null
+    icon: "と"
 
 initial_positions:
+  # Player 1: Chess (bottom, y increasing upward)
   player_1:
-    - type: "king"
+    - type: "chess_rook"   
+      position: [0, 0]
+      promoted: false
+    - type: "chess_knight"
+      position: [1, 0]
+      promoted: false
+    - type: "chess_bishop"
+      position: [2, 0]
+      promoted: false
+    - type: "chess_queen"
+      position: [3, 0]
+      promoted: false
+    - type: "chess_king"
       position: [4, 0]
       promoted: false
-    - type: "pawn"
+    - type: "chess_bishop"
+      position: [5, 0]
+      promoted: false
+    - type: "chess_knight"
+      position: [6, 0]
+      promoted: false
+    - type: "chess_rook"
+      position: [7, 0]
+      promoted: false
+    - type: "chess_pawn"
+      position: [0, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [1, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [2, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [3, 1]
+      promoted: false
+    - type: "chess_pawn"
       position: [4, 1]
       promoted: false
-  player_2:
-    - type: "king"
-      position: [4, 7]
+    - type: "chess_pawn"
+      position: [5, 1]
       promoted: false
-    - type: "pawn"
+    - type: "chess_pawn"
+      position: [6, 1]
+      promoted: false
+    - type: "chess_pawn"
+      position: [7, 1]
+      promoted: false
+
+  # Player 2: Shogi (top)
+  player_2:
+    - type: "shogi_lance"
+      position: [0, 8]
+      promoted: false
+    - type: "shogi_knight"
+      position: [1, 8]
+      promoted: false
+    - type: "shogi_silver"
+      position: [2, 8]
+      promoted: false
+    - type: "shogi_gold"
+      position: [3, 8]
+      promoted: false
+    - type: "shogi_king"
+      position: [4, 8]
+      promoted: false
+    - type: "shogi_gold"
+      position: [5, 8]
+      promoted: false
+    - type: "shogi_silver"
+      position: [6, 8]
+      promoted: false
+    - type: "shogi_knight"
+      position: [7, 8]
+      promoted: false
+    - type: "shogi_lance"
+      position: [8, 8]
+      promoted: false
+    - type: "shogi_bishop"
+      position: [1, 7]
+      promoted: false
+    - type: "shogi_rook"
+      position: [7, 7]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [0, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [1, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [2, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [3, 6]
+      promoted: false
+    - type: "shogi_pawn"
       position: [4, 6]
       promoted: false
+    - type: "shogi_pawn"
+      position: [5, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [6, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [7, 6]
+      promoted: false
+    - type: "shogi_pawn"
+      position: [8, 6]
+      promoted: false
 `,
-                rules: `# ルール設定
+                rules: `# ルール設定（将棋 vs チェス）
 turn_system: "alternate"
 victory_conditions:
   - type: "capture_king"
-    value: "king"
+    value: "chess_king"
+  - type: "capture_king"
+    value: "shogi_king"
 draw_conditions:
   repetition: 4
 piece_reuse: "off"

@@ -13,6 +13,7 @@ class GameManager {
         this.players = [];
         this.gameHistory = [];
         this.isMyTurn = false;
+        this.iconMap = {};
         this.init();
     }
 
@@ -22,6 +23,14 @@ class GameManager {
     init() {
         this.boardElement = document.getElementById('game-board');
         this.bindEvents();
+    }
+
+    /**
+     * YAMLから抽出した駒アイコンマップを設定
+     * @param {Object<string, {icon?: string, icon_image?: string}>} iconMap
+     */
+    setIconMap(iconMap) {
+        this.iconMap = iconMap || {};
     }
 
     /**
@@ -218,7 +227,8 @@ class GameManager {
         boardContainer.style.display = 'grid';
         boardContainer.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
         boardContainer.style.gap = '2px';
-        boardContainer.style.maxWidth = '600px';
+        boardContainer.style.width = 'min(80vmin, 600px)';
+        boardContainer.style.aspectRatio = `${width} / ${height}`; // 正方形比率維持
         boardContainer.style.margin = '0 auto';
 
         // 盤面のマス目を生成
@@ -260,7 +270,8 @@ class GameManager {
         boardContainer.style.display = 'grid';
         boardContainer.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
         boardContainer.style.gap = '1px';
-        boardContainer.style.maxWidth = '600px';
+        boardContainer.style.width = 'min(80vmin, 600px)';
+        boardContainer.style.aspectRatio = `${width} / ${height}`;
         boardContainer.style.margin = '0 auto';
         boardContainer.style.border = '3px solid #2196f3';
         boardContainer.style.borderRadius = '8px';
@@ -392,20 +403,26 @@ class GameManager {
      * @returns {string} 駒のシンボル
      */
     getPieceSymbol(pieceType) {
-        const symbols = {
+        const yamlIcon = this.iconMap && this.iconMap[pieceType];
+        if (yamlIcon) {
+            if (yamlIcon.icon_image) {
+                const src = yamlIcon.icon_image;
+                return `<img src="${src}" alt="${pieceType}" style="max-width:80%;max-height:80%;object-fit:contain;" />`;
+            }
+            if (yamlIcon.icon) {
+                return String(yamlIcon.icon);
+            }
+        }
+        // Fallback minimal set, otherwise initial
+        const fallback = {
             'king': '♔',
-            'queen': '♕',
-            'rook': '♖',
-            'bishop': '♗',
-            'knight': '♘',
             'pawn': '♙',
             'explorer': '⚔',
             'warrior': '⚒',
             'archer': '🏹',
             'mage': '⚡'
         };
-
-        return symbols[pieceType] || pieceType.charAt(0).toUpperCase();
+        return fallback[pieceType] || pieceType.charAt(0).toUpperCase();
     }
 
     /**
@@ -477,6 +494,8 @@ class GameManager {
         // 簡易的な移動ロジック（実際のプロジェクトでは詳細なルールを実装）
         switch (piece.type) {
             case 'king':
+            case 'chess_king':
+            case 'shogi_king':
                 // 隣接8マス
                 for (let dx = -1; dx <= 1; dx++) {
                     for (let dy = -1; dy <= 1; dy++) {
@@ -492,6 +511,8 @@ class GameManager {
                 break;
 
             case 'pawn':
+            case 'chess_pawn':
+            case 'shogi_pawn':
                 // 前進のみ
                 const direction = piece.owner === 'player_1' ? 1 : -1;
                 const newY = y + direction;
